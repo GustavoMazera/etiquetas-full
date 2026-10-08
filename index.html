@@ -64,6 +64,18 @@
   .empty{color:var(--muted);font-size:14px;padding:30px 0;text-align:center}
   details{margin-top:12px} summary{cursor:pointer;font-size:14px;color:var(--muted)}
   .sep{height:1px;background:var(--line);margin:14px 0}
+  .prod-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .prods{display:grid;gap:8px}
+  .prod{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .prod .info{flex:1;min-width:0}
+  .prod .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prod .meta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .prod .acts{display:flex;gap:8px;flex:none}
+  .prod button{padding:8px 12px;font-size:14px}
+  .qty{font-size:20px;font-weight:700;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+  @media (max-width:600px){.prod{flex-wrap:wrap}.prod .acts{width:100%}.prod .acts button{flex:1}}
+  .group-title{font-weight:600;margin:18px 0 0;font-size:14px}
+  .stats .stat{min-width:90px}
   footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}
 </style>
 </head>
@@ -73,7 +85,7 @@
     <div class="logo"><svg viewBox="0 0 26 26" fill="#ffe600"><rect x="3" y="4" width="2" height="18"/><rect x="7" y="4" width="1" height="18"/><rect x="10" y="4" width="3" height="18"/><rect x="15" y="4" width="1" height="18"/><rect x="18" y="4" width="3" height="18"/><rect x="23" y="4" width="1" height="18"/></svg></div>
     <div>
       <h1>Etiquetas Full</h1>
-      <p>ZPL do Mercado Livre → PDF com 12 etiquetas por folha 15×10 cm</p>
+      <p>ZPL do Mercado Livre → um PDF por produto, 12 etiquetas por folha 10×15 cm</p>
     </div>
   </header>
 
@@ -87,7 +99,7 @@
       </div>
       <textarea id="zpl" spellcheck="false" placeholder="…ou cole aqui o código ZPL (começa com ^XA e termina com ^XZ)"></textarea>
       <div class="row" style="margin-top:12px">
-        <button class="primary" id="gen">Gerar PDF</button>
+        <button class="primary" id="gen">Gerar PDFs</button>
         <button id="clear">Limpar</button>
       </div>
       <div class="bar" id="bar"><i></i></div>
@@ -99,19 +111,19 @@
       <div class="fields">
         <label class="f full">Folha da impressora térmica
           <select id="sheet">
-            <option value="150x100">15 × 10 cm deitada (3 colunas × 4 linhas)</option>
             <option value="100x150">10 × 15 cm em pé (2 colunas × 6 linhas)</option>
+            <option value="150x100">15 × 10 cm deitada (3 colunas × 4 linhas)</option>
           </select>
         </label>
         <label class="f">Largura da etiqueta (mm)<input type="number" id="lw" value="40" step="0.5" min="5"></label>
         <label class="f">Altura da etiqueta (mm)<input type="number" id="lh" value="25" step="0.5" min="5"></label>
-        <label class="f">Espaço entre colunas (mm)<input type="number" id="gx" value="3" step="0.5" min="0"></label>
+        <label class="f">Espaço entre colunas (mm)<input type="number" id="gx" value="0" step="0.5" min="0"></label>
         <label class="f">Espaço entre linhas (mm)<input type="number" id="gy" value="0" step="0.5" min="0"></label>
       </div>
       <div class="sep"></div>
       <div style="display:grid;gap:10px">
         <label class="check"><input type="checkbox" id="usePQ" checked> Repetir cada etiqueta pela quantidade do arquivo (^PQ)</label>
-        <label class="check"><input type="checkbox" id="cuts"> Mostrar linhas de corte no PDF</label>
+        <label class="check"><input type="checkbox" id="cuts" checked> Mostrar linhas de corte no PDF</label>
       </div>
       <details>
         <summary>Ajustes avançados (calibração)</summary>
@@ -129,20 +141,28 @@
       <div class="stats">
         <div class="stat"><b id="sPer">–</b><span>etiquetas por folha</span></div>
         <div class="stat"><b id="sTot">–</b><span>etiquetas no total</span></div>
+        <div class="stat"><b id="sProd">–</b><span>produtos</span></div>
         <div class="stat"><b id="sPag">–</b><span>folhas</span></div>
       </div>
       <p class="hint" id="fitHint"></p>
       <div class="sep"></div>
-      <div class="row">
-        <button class="dark" id="dl" disabled>Baixar PDF</button>
-        <button id="open" disabled>Abrir para imprimir</button>
-      </div>
       <p class="hint">Na hora de imprimir, escolha a impressora térmica, papel 100 × 150 mm e escala <b>100% / Tamanho real</b> (não use “Ajustar à página”).</p>
     </section>
   </div>
 
   <section class="card" style="margin-top:18px">
-    <h2>3 · Prévia das folhas</h2>
+    <div class="prod-head">
+      <h2 style="margin:0">3 · PDFs por produto</h2>
+      <div class="row">
+        <button class="dark" id="dlAll" disabled>Baixar todos (.zip)</button>
+        <button id="dlOne" disabled>PDF único com tudo</button>
+      </div>
+    </div>
+    <div id="prods"><div class="empty">Os PDFs de cada produto aparecem aqui depois de gerar.</div></div>
+  </section>
+
+  <section class="card" style="margin-top:18px">
+    <h2>4 · Prévia das folhas</h2>
     <div id="pages"><div class="empty">A prévia aparece aqui depois de gerar o PDF.</div></div>
   </section>
 
@@ -157,7 +177,8 @@ import { init, zplToBase64Async } from 'https://cdn.jsdelivr.net/npm/zpl-rendere
 const $ = id => document.getElementById(id);
 const MM_TO_PT = 72 / 25.4;
 const UPSCALE = 4; // amplia sem suavizar para manter código de barras nítido
-let pdfBytes = null, pdfUrl = null;
+let results = []; // [{code,name,count,pages,bytes,url,file}]
+let allPdf = null;
 
 // ---------- motor de renderização (WASM, roda local) ----------
 let engine = null;
@@ -174,11 +195,11 @@ getEngine().catch(()=>{});
 // ---------- configurações salvas ----------
 const KEYS = ['sheet','lw','lh','gx','gy','ox','oy','dpmm','usePQ','cuts'];
 try {
-  const saved = JSON.parse(localStorage.getItem('etq-cfg') || '{}');
+  const saved = JSON.parse(localStorage.getItem('etq-cfg-v3') || '{}');
   for (const k of KEYS) if (k in saved) { const el=$(k); el.type==='checkbox' ? el.checked=saved[k] : el.value=saved[k]; }
 } catch {}
 function saveCfg(){
-  try { const o={}; for (const k of KEYS){ const el=$(k); o[k]= el.type==='checkbox'?el.checked:el.value; } localStorage.setItem('etq-cfg', JSON.stringify(o)); } catch {}
+  try { const o={}; for (const k of KEYS){ const el=$(k); o[k]= el.type==='checkbox'?el.checked:el.value; } localStorage.setItem('etq-cfg-v3', JSON.stringify(o)); } catch {}
 }
 
 function cfg(){
@@ -199,22 +220,81 @@ function layout(c){
 }
 
 // ---------- leitura do ZPL ----------
-function parseZpl(text){
+// O Mercado Livre manda 2 etiquetas lado a lado no mesmo bloco ^XA…^XZ (rolo de 2 colunas).
+// Separamos cada campo (^FO…^FS) pela coluna onde ele está e montamos um ZPL próprio para
+// cada etiqueta, já trazida para a posição da coluna da esquerda.
+const FIELD_RE = /\^F[OT]\s*(\d+)\s*,\s*(\d+)[\s\S]*?\^FS/gi;
+function parseZpl(text, c = cfg()){
   const blocks = text.match(/\^XA[\s\S]*?\^XZ/gi) || [];
-  return blocks.map(z => {
+  const tile = Math.max(1, Math.round(c.lw * c.dpmm)); // largura de 1 etiqueta em pontos
+  const parsed = blocks.map(z => {
     const m = z.match(/\^PQ\s*(\d+)/i);
-    return { zpl: z, qty: m ? Math.max(1, parseInt(m[1],10)) : 1 };
+    const qty = m ? Math.max(1, parseInt(m[1],10)) : 1;
+    const body = z.replace(/^\^XA/i,'').replace(/\^XZ$/i,'');
+    const fields = [...body.matchAll(FIELD_RE)].map(f => ({ text:f[0], x:parseInt(f[1],10), col:Math.floor(parseInt(f[1],10)/tile) }));
+    const globals = body.replace(FIELD_RE, '').replace(/\^PQ[^\^]*/gi, '');
+    return { z, qty, fields, globals };
   });
+  // menor x de cada coluna no arquivo inteiro, para alinhar todas as colunas pela da esquerda
+  const minX = {};
+  for (const b of parsed) for (const f of b.fields) minX[f.col] = Math.min(minX[f.col] ?? Infinity, f.x);
+  const offsetOf = k => {
+    if (k === 0) return 0;
+    const o = (minX[0] !== undefined) ? minX[k] - minX[0] : k*tile;
+    return (o >= 0 && o < (k+1)*tile) ? o : k*tile;
+  };
+  const labels = [];
+  for (const b of parsed){
+    if (!b.fields.length){ labels.push({ zpl:b.z, qty:b.qty, ...productInfo(b.z) }); continue; }
+    const cols = [...new Set(b.fields.map(f=>f.col))].sort((x,y)=>x-y);
+    for (const k of cols){
+      const off = offsetOf(k);
+      const fz = b.fields.filter(f=>f.col===k)
+        .map(f => f.text.replace(/^\^F([OT])\s*(\d+)/i, (_,t,x) => `^F${t}${Math.max(0, parseInt(x,10)-off)}`)).join('\n');
+      labels.push({ zpl: `^XA${b.globals}\n${fz}\n^XZ`, qty:b.qty, ...productInfo(fz) });
+    }
+  }
+  return labels;
 }
 
-let lastTotal = null;
+// ^FH: o ML escreve acentos como _C3_A7 (bytes UTF-8 em hexadecimal)
+function decodeFH(t){
+  if (!/_[0-9A-Fa-f]{2}/.test(t)) return t;
+  const bytes = []; let i = 0;
+  while (i < t.length){
+    if (t[i] === '_' && /^[0-9A-Fa-f]{2}$/.test(t.substr(i+1,2))){ bytes.push(parseInt(t.substr(i+1,2),16)); i += 3; }
+    else { const enc = new TextEncoder().encode(t[i]); bytes.push(...enc); i++; }
+  }
+  try { return new TextDecoder('utf-8').decode(new Uint8Array(bytes)); } catch { return t; }
+}
+// Identifica o produto pelo código de barras (código ML) e pega o nome e o SKU impressos
+function productInfo(z){
+  const code = (z.match(/\^B[A-Z0-9][^\^]*(?:\^[A-Z]{2}[^\^]*)*?\^FD([^\^]+)/i) || [])[1]?.trim() || '';
+  const texts = [...z.matchAll(/\^FD([^\^]*)/gi)].map(m => decodeFH(m[1]).replace(/\s+/g,' ').trim()).filter(Boolean);
+  const sku = (texts.find(t => /^SKU\s*:/i.test(t)) || '').replace(/^SKU\s*:\s*/i,'');
+  const name = texts.find(t => t !== code && !/^SKU\s*:/i.test(t) && t.length > 3) || code || 'Sem identificação';
+  return { code, name, sku, group: code || name };
+}
+
+function groupsOf(blocks, usePQ){
+  const g = new Map();
+  for (const b of blocks){
+    if (!g.has(b.group)) g.set(b.group, { code:b.code, name:b.name, sku:b.sku, count:0 });
+    const it = g.get(b.group); it.count += usePQ ? b.qty : 1;
+    if (!it.sku && b.sku) it.sku = b.sku;
+  }
+  return [...g.values()];
+}
+
 function refreshStats(){
   const c = cfg(), L = layout(c);
   $('sPer').textContent = L.per;
-  const blocks = parseZpl($('zpl').value);
+  const blocks = parseZpl($('zpl').value, c);
   const total = blocks.reduce((s,b)=>s+(c.usePQ?b.qty:1),0);
   $('sTot').textContent = blocks.length ? total : '–';
-  $('sPag').textContent = blocks.length && L.per ? Math.ceil(total/L.per) : '–';
+  const groups = groupsOf(blocks, c.usePQ);
+  $('sProd').textContent = blocks.length ? groups.length : '–';
+  $('sPag').textContent = blocks.length && L.per ? groups.reduce((s,g)=>s+Math.ceil(g.count/L.per),0) : '–';
   const hint = $('fitHint');
   if (L.per === 0) hint.innerHTML = '<span style="color:var(--err)">A etiqueta não cabe na folha com essas medidas.</span>';
   else if (L.per !== 12) hint.innerHTML = `Com essas medidas cabem <b>${L.per}</b> por folha (${L.cols}×${L.rows}). Para 12, deixe o espaço entre linhas em 0 e confira as medidas.`;
@@ -238,8 +318,9 @@ async function readFiles(files){
   if (!/\^XA/i.test(text)) { setMsg('Não encontrei etiquetas ZPL nesse arquivo (procuro por ^XA … ^XZ).', 'err'); return; }
   $('zpl').value = ($('zpl').value.trim() ? $('zpl').value.trim()+'\n' : '') + text;
   resetOutput(); refreshStats();
-  const n = parseZpl($('zpl').value).length;
-  setMsg(`${files.length>1?files.length+' arquivos carregados':'Arquivo carregado'} — ${n} etiqueta(s) diferente(s) encontrada(s). Clique em “Gerar PDF”.`, 'ok');
+  const c = cfg(), lbs = parseZpl($('zpl').value, c);
+  const n = lbs.reduce((s,b)=>s+(c.usePQ?b.qty:1),0), np = groupsOf(lbs, c.usePQ).length;
+  setMsg(`${files.length>1?files.length+' arquivos carregados':'Arquivo carregado'} — ${n} etiqueta(s) de ${np} produto(s). Clique em “Gerar PDFs”.`, 'ok');
 }
 const drop = $('drop');
 drop.onclick = () => $('file').click();
@@ -253,20 +334,37 @@ drop.addEventListener('drop', e => { if (e.dataTransfer.files.length) readFiles(
 function setMsg(t, cls=''){ const m=$('msg'); m.textContent=t; m.className='msg '+cls; }
 function progress(p){ const b=$('bar'); if (p==null){ b.style.display='none'; return; } b.style.display='block'; b.firstElementChild.style.width=(p*100).toFixed(1)+'%'; }
 function resetOutput(){
-  pdfBytes=null; if (pdfUrl){ URL.revokeObjectURL(pdfUrl); pdfUrl=null; }
-  $('dl').disabled=true; $('open').disabled=true;
+  for (const r of results) URL.revokeObjectURL(r.url);
+  if (allPdf) URL.revokeObjectURL(allPdf.url);
+  results = []; allPdf = null;
+  $('dlAll').disabled = true; $('dlOne').disabled = true;
 }
+function slug(t){
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) || 'etiquetas';
+}
+function stamp(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function download(url, file){ const a=document.createElement('a'); a.href=url; a.download=file; document.body.appendChild(a); a.click(); a.remove(); }
+function esc(t){ return String(t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
-function upscalePng(b64){
+// Recorta cada coluna (etiqueta) da imagem do bloco e amplia sem suavizar.
+function splitPng(b64, cols, tilePx){
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {
-      const cv = document.createElement('canvas');
-      cv.width = img.width*UPSCALE; cv.height = img.height*UPSCALE;
-      const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
-      ctx.drawImage(img, 0, 0, cv.width, cv.height);
-      res({ dataUrl: 'data:image/png;base64,'+b64, big: cv.toDataURL('image/png') });
+      const out = {};
+      for (const k of cols){
+        const w = Math.min(tilePx, img.width - k*tilePx); if (w <= 0) continue;
+        const make = (scale) => {
+          const cv = document.createElement('canvas');
+          cv.width = tilePx*scale; cv.height = img.height*scale;
+          const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
+          ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+          ctx.drawImage(img, k*tilePx, 0, w, img.height, 0, 0, w*scale, img.height*scale);
+          return cv.toDataURL('image/png');
+        };
+        out[k] = { dataUrl: make(1), big: make(UPSCALE) };
+      }
+      res(out);
     };
     img.onerror = () => rej(new Error('Falha ao ler a imagem da etiqueta.'));
     img.src = 'data:image/png;base64,'+b64;
@@ -276,7 +374,7 @@ function upscalePng(b64){
 // ---------- gerar ----------
 async function generate(){
   const c = cfg(), L = layout(c);
-  const blocks = parseZpl($('zpl').value);
+  const blocks = parseZpl($('zpl').value, c);
   if (!blocks.length) return setMsg('Cole o ZPL ou envie o arquivo primeiro (precisa ter ^XA … ^XZ).', 'err');
   if (!L.per) return setMsg('A etiqueta não cabe na folha com essas medidas.', 'err');
   if (c.lw<=0||c.lh<=0) return setMsg('Confira a largura e a altura da etiqueta.', 'err');
@@ -288,13 +386,14 @@ async function generate(){
 
     // renderiza cada etiqueta diferente só uma vez
     const cache = new Map(), order = [];
+    const tilePx = Math.round(c.lw * c.dpmm);
     const unique = [...new Set(blocks.map(b=>b.zpl))];
     let i = 0, failed = 0;
     for (const z of unique){
       setMsg(`Desenhando etiqueta ${++i} de ${unique.length}…`);
       try {
         const b64 = await zplToBase64Async(z, c.lw, c.lh, c.dpmm, { grayscaleOutput:false });
-        cache.set(z, await upscalePng(b64));
+        cache.set(z, (await splitPng(b64, [0], tilePx))[0]);
       } catch (e) { failed++; console.error(e); }
       progress(0.05 + 0.75*i/unique.length);
       await new Promise(r=>setTimeout(r,0));
@@ -302,82 +401,126 @@ async function generate(){
     for (const b of blocks){
       if (!cache.has(b.zpl)) continue;
       const n = c.usePQ ? b.qty : 1;
-      for (let k=0;k<n;k++) order.push(b.zpl);
+      for (let k=0;k<n;k++) order.push(b);
     }
     if (!order.length) throw new Error('Nenhuma etiqueta pôde ser desenhada. Confira se o ZPL está completo.');
 
-    // monta o PDF
-    setMsg('Montando o PDF…');
-    const { PDFDocument, rgb } = PDFLib;
-    const doc = await PDFDocument.create();
-    doc.setTitle('Etiquetas Full'); doc.setCreator('Etiquetas Full');
-    const emb = new Map();
-    for (const [z, v] of cache) emb.set(z, await doc.embedPng(v.big));
+    // separa por produto (na ordem em que aparecem no arquivo) e monta um PDF para cada
+    const byGroup = new Map();
+    for (const it of order){ if (!byGroup.has(it.group)) byGroup.set(it.group, []); byGroup.get(it.group).push(it); }
     const pt = v => v*MM_TO_PT;
-    const pages = Math.ceil(order.length / L.per);
-    for (let p=0;p<pages;p++){
-      const page = doc.addPage([pt(c.W), pt(c.H)]);
-      for (let s=0;s<L.per;s++){
-        const idx = p*L.per+s; if (idx>=order.length) break;
-        const { x, y } = L.slots[s];
-        const yPdf = c.H - y - c.lh;
-        page.drawImage(emb.get(order[idx]), { x:pt(x), y:pt(yPdf), width:pt(c.lw), height:pt(c.lh) });
-        if (c.cuts) page.drawRectangle({ x:pt(x), y:pt(yPdf), width:pt(c.lw), height:pt(c.lh), borderColor:rgb(.75,.75,.75), borderWidth:.3 });
+    async function buildPdf(items, title){
+      const { PDFDocument, rgb } = PDFLib;
+      const doc = await PDFDocument.create();
+      doc.setTitle(title); doc.setCreator('Etiquetas Full');
+      const emb = new Map();
+      for (const it of items) if (!emb.has(it.zpl)) emb.set(it.zpl, await doc.embedPng(cache.get(it.zpl).big));
+      const pages = Math.ceil(items.length / L.per);
+      for (let p=0;p<pages;p++){
+        const page = doc.addPage([pt(c.W), pt(c.H)]);
+        for (let s=0;s<L.per;s++){
+          const idx = p*L.per+s; if (idx>=items.length) break;
+          const { x, y } = L.slots[s];
+          const yPdf = c.H - y - c.lh;
+          page.drawImage(emb.get(items[idx].zpl), { x:pt(x), y:pt(yPdf), width:pt(c.lw), height:pt(c.lh) });
+          if (c.cuts) page.drawRectangle({ x:pt(x), y:pt(yPdf), width:pt(c.lw), height:pt(c.lh), borderColor:rgb(.6,.6,.6), borderWidth:.4, borderDashArray:[1.5,1.5] });
+        }
       }
-      progress(0.8 + 0.18*(p+1)/pages);
+      return { bytes: await doc.save(), pages };
     }
-    pdfBytes = await doc.save();
-    pdfUrl = URL.createObjectURL(new Blob([pdfBytes], { type:'application/pdf' }));
-    $('dl').disabled = false; $('open').disabled = false;
+    let gi = 0;
+    for (const [group, items] of byGroup){
+      setMsg(`Montando PDF ${++gi} de ${byGroup.size}…`);
+      const f = items[0];
+      const { bytes, pages } = await buildPdf(items, f.name);
+      results.push({ code:f.code, name:f.name, sku:f.sku, count:items.length, pages, bytes,
+        url: URL.createObjectURL(new Blob([bytes], { type:'application/pdf' })),
+        file: `${slug(f.name)}${f.code?'_'+f.code:''}_${items.length}un.pdf` });
+      progress(0.8 + 0.15*gi/byGroup.size);
+    }
+    // PDF único: junta os PDFs dos produtos (cada produto começa numa folha nova)
+    {
+      const { PDFDocument } = PDFLib;
+      const doc = await PDFDocument.create(); doc.setTitle('Etiquetas Full — todas');
+      for (const r of results){ const src = await PDFDocument.load(r.bytes); (await doc.copyPages(src, src.getPageIndices())).forEach(pg => doc.addPage(pg)); }
+      allPdf = { url: URL.createObjectURL(new Blob([await doc.save()], { type:'application/pdf' })), file:`etiquetas-full_todas_${stamp()}.pdf` };
+    }
 
-    renderPreview(c, L, order, cache);
+    renderProducts();
+    $('dlAll').disabled = false; $('dlOne').disabled = false;
+    renderPreview(c, L, byGroup, cache);
     progress(1); setTimeout(()=>progress(null), 600);
-    setMsg(`Pronto: ${order.length} etiqueta(s) em ${pages} folha(s).` + (failed?` Atenção: ${failed} etiqueta(s) com erro foram puladas.`:''), failed?'err':'ok');
+    const totalPages = results.reduce((s,r)=>s+r.pages,0);
+    setMsg(`Pronto: ${order.length} etiqueta(s) de ${results.length} produto(s), ${totalPages} folha(s). Baixe abaixo.` + (failed?` Atenção: ${failed} etiqueta(s) com erro foram puladas.`:''), failed?'err':'ok');
   } catch (e){
     console.error(e); progress(null);
     setMsg(e.message || 'Erro ao gerar o PDF.', 'err');
   } finally { $('gen').disabled = false; }
 }
 
-function renderPreview(c, L, order, cache){
+function renderProducts(){
+  const box = $('prods'); box.innerHTML = '';
+  const list = document.createElement('div'); list.className = 'prods';
+  results.forEach((r, i) => {
+    const row = document.createElement('div'); row.className = 'prod';
+    row.innerHTML = `<div class="qty">${r.count}</div>
+      <div class="info"><div class="name" title="${esc(r.name)}">${esc(r.name)}</div>
+      <div class="meta">${r.code?'Cód. '+esc(r.code):''}${r.sku?' · SKU '+esc(r.sku):''} · ${r.pages} folha(s)</div></div>
+      <div class="acts"><button class="dark" data-dl="${i}">Baixar PDF</button><button data-open="${i}">Abrir</button></div>`;
+    list.appendChild(row);
+  });
+  box.appendChild(list);
+  list.onclick = e => {
+    const d = e.target.closest('[data-dl]'), o = e.target.closest('[data-open]');
+    if (d){ const r = results[+d.dataset.dl]; download(r.url, r.file); }
+    if (o){ window.open(results[+o.dataset.open].url, '_blank'); }
+  };
+}
+
+function renderPreview(c, L, byGroup, cache){
   const box = $('pages'); box.innerHTML = '';
-  const wrap = document.createElement('div'); wrap.className='pages';
-  const scale = Math.min(3.2, (Math.min(box.clientWidth||600, 520)) / c.W); // px por mm
-  const pages = Math.ceil(order.length / L.per);
-  const MAX = 30;
-  for (let p=0;p<Math.min(pages,MAX);p++){
-    const holder = document.createElement('div');
-    const pg = document.createElement('div'); pg.className='page';
-    pg.style.width = c.W*scale+'px'; pg.style.height = c.H*scale+'px';
-    for (let s=0;s<L.per;s++){
-      const idx = p*L.per+s; if (idx>=order.length) break;
-      const { x, y } = L.slots[s];
-      const img = document.createElement('img');
-      img.src = cache.get(order[idx]).dataUrl; img.alt='';
-      Object.assign(img.style, { left:x*scale+'px', top:y*scale+'px', width:c.lw*scale+'px', height:c.lh*scale+'px' });
-      pg.appendChild(img);
-      const cut = document.createElement('div'); cut.className='cut';
-      Object.assign(cut.style, { left:x*scale+'px', top:y*scale+'px', width:c.lw*scale+'px', height:c.lh*scale+'px' });
-      pg.appendChild(cut);
+  const scale = Math.min(3.2, (Math.min(box.clientWidth||600, 420)) / c.W); // px por mm
+  const MAXP = 2;
+  for (const items of byGroup.values()){
+    const title = document.createElement('div'); title.className='group-title';
+    title.textContent = `${items[0].name} — ${items.length} etiqueta(s)`;
+    const wrap = document.createElement('div'); wrap.className='pages';
+    const pages = Math.ceil(items.length / L.per);
+    for (let p=0;p<Math.min(pages,MAXP);p++){
+      const holder = document.createElement('div');
+      const pg = document.createElement('div'); pg.className='page';
+      pg.style.width = c.W*scale+'px'; pg.style.height = c.H*scale+'px';
+      for (let s=0;s<L.per;s++){
+        const idx = p*L.per+s; if (idx>=items.length) break;
+        const { x, y } = L.slots[s];
+        const img = document.createElement('img');
+        img.src = cache.get(items[idx].zpl).dataUrl; img.alt='';
+        Object.assign(img.style, { left:x*scale+'px', top:y*scale+'px', width:c.lw*scale+'px', height:c.lh*scale+'px' });
+        pg.appendChild(img);
+        const cut = document.createElement('div'); cut.className='cut';
+        Object.assign(cut.style, { left:x*scale+'px', top:y*scale+'px', width:c.lw*scale+'px', height:c.lh*scale+'px' });
+        pg.appendChild(cut);
+      }
+      const lbl = document.createElement('div'); lbl.className='page-label'; lbl.textContent = `Folha ${p+1} de ${pages}`;
+      holder.append(pg, lbl); wrap.appendChild(holder);
     }
-    const lbl = document.createElement('div'); lbl.className='page-label'; lbl.textContent = `Folha ${p+1} de ${pages}`;
-    holder.append(pg, lbl); wrap.appendChild(holder);
+    box.append(title, wrap);
+    if (pages > MAXP){ const m=document.createElement('p'); m.className='hint'; m.textContent=`Mostrando ${MAXP} de ${pages} folhas. O PDF tem todas.`; box.appendChild(m); }
   }
-  box.appendChild(wrap);
-  if (pages > MAX){ const m=document.createElement('p'); m.className='hint'; m.textContent=`Mostrando as ${MAX} primeiras folhas. O PDF tem todas as ${pages}.`; box.appendChild(m); }
 }
 
 // ---------- botões ----------
 $('gen').onclick = generate;
-$('clear').onclick = () => { $('zpl').value=''; resetOutput(); $('pages').innerHTML='<div class="empty">A prévia aparece aqui depois de gerar o PDF.</div>'; setMsg(''); refreshStats(); };
-$('dl').onclick = () => {
-  if (!pdfUrl) return;
-  const d = new Date(), pad = n=>String(n).padStart(2,'0');
-  const a = document.createElement('a'); a.href = pdfUrl;
-  a.download = `etiquetas-full-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}h${pad(d.getMinutes())}.pdf`;
-  document.body.appendChild(a); a.click(); a.remove();
+$('clear').onclick = () => { $('zpl').value=''; resetOutput(); $('pages').innerHTML='<div class="empty">A prévia aparece aqui depois de gerar o PDF.</div>'; $('prods').innerHTML='<div class="empty">Os PDFs de cada produto aparecem aqui depois de gerar.</div>'; setMsg(''); refreshStats(); };
+$('dlAll').onclick = async () => {
+  if (!results.length) return;
+  const zip = new JSZip();
+  for (const r of results) zip.file(r.file, r.bytes);
+  const blob = await zip.generateAsync({ type:'blob' });
+  const url = URL.createObjectURL(blob); download(url, `etiquetas-full_por-produto_${stamp()}.zip`);
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
 };
-$('open').onclick = () => { if (pdfUrl) window.open(pdfUrl, '_blank'); };
+$('dlOne').onclick = () => { if (allPdf) download(allPdf.url, allPdf.file); };
 $('zpl').addEventListener('input', () => { resetOutput(); refreshStats(); });
 KEYS.forEach(k => $(k).addEventListener('input', () => { resetOutput(); refreshStats(); }));
 refreshStats();
